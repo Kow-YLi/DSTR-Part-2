@@ -4,8 +4,6 @@
 # Compiled Object files
 *.slo
 *.lo
-*.o
-*.obj
 
 # Precompiled Headers
 *.gch
@@ -66,3 +64,29 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# Compiled Executables and Objects
+*.exe
+*.o
+*.obj
+*.out
+
+# Visual Studio specific files
+.vs/
+*.sln
+*.vcxproj
+*.vcxproj.*
+*.suo
+*.user
+Debug/
+Release/
+x64/
+x86/
+
+# Code::Blocks specific files
+*.cbp
+*.depend
+*.layout
+bin/
+obj/
+*.workspace
