@@ -1,4 +1,4 @@
-
+#include "../models/Parcel.h"
 #ifndef PARCEL_INTAKE_H
 #define PARCEL_INTAKE_H
 
