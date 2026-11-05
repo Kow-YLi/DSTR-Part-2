@@ -1,3 +1,7 @@
+#ifndef PARCEL_INTAKE_H
+#define PARCEL_INTAKE_H
+
+#include "../models/Parcel.h"
 
 #ifndef PARCEL_H
 #define PARCEL_H
