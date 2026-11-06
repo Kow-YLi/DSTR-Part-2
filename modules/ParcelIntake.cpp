@@ -185,9 +185,7 @@ ParcelIntake::~ParcelIntake() {
     }
 }
 
-// ==================================================
 // Singly Linked List Operations
-// ==================================================
 
 // Search for a parcel node using Parcel ID
 ParcelIntake::ParcelNode*
@@ -225,9 +223,7 @@ void ParcelIntake::insertParcel(const Parcel& parcel) {
     current->next = newNode;
 }
 
-// ==================================================
 // FIFO Queue Operations
-// ==================================================
 
 bool ParcelIntake::isQueueEmpty() const {
     return front == nullptr;
@@ -308,9 +304,7 @@ void ParcelIntake::removeFromQueue(const string& parcelID) {
     }
 }
 
-// ==================================================
 // Display Parcel Details
-// ==================================================
 
 void ParcelIntake::displayParcel(const Parcel& parcel) const {
     cout << "\n----------------------------------------\n";
@@ -325,9 +319,7 @@ void ParcelIntake::displayParcel(const Parcel& parcel) const {
     cout << "----------------------------------------\n";
 }
 
-// ==================================================
 // Requirement 1: Register New Parcel
-// ==================================================
 
 void ParcelIntake::registerParcel() {
     Parcel parcel;
@@ -374,9 +366,8 @@ void ParcelIntake::registerParcel() {
     cout << "Status: " << parcel.status << "\n";
 }
 
-// ==================================================
+
 // Requirement 2: Display and Search Records
-// ==================================================
 
 void ParcelIntake::displayAllParcels() const {
     cout << "\n========== ALL PARCEL RECORDS ==========\n";
@@ -429,9 +420,8 @@ bool ParcelIntake::getParcel(
     return true;
 }
 
-// ==================================================
+
 // Requirement 3: Display Incoming Queue
-// ==================================================
 
 void ParcelIntake::displayPendingQueue() const {
     cout << "\n========== INCOMING PARCEL QUEUE ==========\n";
@@ -465,9 +455,7 @@ void ParcelIntake::displayPendingQueue() const {
     cout << "Total Pending: " << position - 1 << "\n";
 }
 
-// ==================================================
 // Requirement 3: Sort and Process Incoming Parcel
-// ==================================================
 
 void ParcelIntake::processNextParcel() {
     cout << "\n========== PROCESS NEXT PARCEL ==========\n";
@@ -544,11 +532,10 @@ void ParcelIntake::processNextParcel() {
     cout << "Next Action : " << parcel.nextAction << "\n";
 }
 
-// ==================================================
-// Requirement 4: Status Changes
-// ==================================================
 
+// Requirement 4: Status Changes
 // Controlled status updates for integrated modules
+
 bool ParcelIntake::updateParcelStatus(
     const string& parcelID,
     const string& newStatus
@@ -590,9 +577,7 @@ bool ParcelIntake::updateParcelStatus(
     return true;
 }
 
-// ==================================================
 // Requirement 4: Update Parcel Record
-// ==================================================
 
 void ParcelIntake::updateParcel() {
     cout << "\n========== UPDATE PARCEL ==========\n";
@@ -684,9 +669,7 @@ void ParcelIntake::updateParcel() {
     }
 }
 
-// ==================================================
 // Requirement 4: Remove Parcel Record
-// ==================================================
 
 void ParcelIntake::removeParcel() {
     cout << "\n========== REMOVE PARCEL ==========\n";
@@ -738,9 +721,7 @@ void ParcelIntake::removeParcel() {
     cout << "Parcel record removed successfully.\n";
 }
 
-// ==================================================
 // Requirement 5: Missing Parcel Handling
-// ==================================================
 
 void ParcelIntake::reportMissingParcel() {
     cout << "\n========== REPORT MISSING PARCEL ==========\n";
