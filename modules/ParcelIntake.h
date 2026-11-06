@@ -7,19 +7,19 @@
 
 class ParcelIntake {
 private:
-    // Node for the Singly Linked List
+    // Singly Linked List node
     struct ParcelNode {
         Parcel data;
         ParcelNode* next;
     };
 
-    // Node for the incoming FIFO Queue
+    // FIFO Queue node
     struct QueueNode {
         std::string parcelID;
         QueueNode* next;
     };
 
-    // Linked list pointer
+    // Linked List pointer
     ParcelNode* head;
 
     // Queue pointers
@@ -41,36 +41,36 @@ private:
     bool isQueueEmpty() const;
     bool isQueued(const std::string& parcelID) const;
 
-    // Helper function
+    // Display helper
     void displayParcel(const Parcel& parcel) const;
 
 public:
     ParcelIntake();
     ~ParcelIntake();
 
-    // Prevent accidental copying of owned nodes
+    // Prevent accidental copying
     ParcelIntake(const ParcelIntake&) = delete;
     ParcelIntake& operator=(const ParcelIntake&) = delete;
 
-    // Functional Requirement 1
+    // Register a new parcel
     void registerParcel();
 
-    // Functional Requirement 2
+    // Display and search parcels
     void displayAllParcels() const;
     void searchParcel() const;
 
-    // Functional Requirement 3
+    // Process incoming parcels
     void displayPendingQueue() const;
     void processNextParcel();
 
-    // Functional Requirement 4
+    // Update and remove records
     void updateParcel();
     void removeParcel();
 
-    // Functional Requirement 5
+    // Handle missing parcels
     void reportMissingParcel();
 
-    // Interfaces for integration with other modules
+    // Integration with other modules
     bool getParcel(
         const std::string& parcelID,
         Parcel& result
