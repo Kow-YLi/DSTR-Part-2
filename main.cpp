@@ -1,8 +1,9 @@
 #include <iostream>
 #include <string>
+#include <cctype>
 
 #include "modules/ParcelIntake.h"
-#include "modules/CollectionDelivery.h"
+#include "modules/CollectionDelivery.hpp"
 // TODO: include the other modules when they are ready, e.g.
 // #include "modules/Module2File.h"
 // #include "modules/Module4File.h"

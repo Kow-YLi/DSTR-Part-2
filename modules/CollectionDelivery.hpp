@@ -1,8 +1,8 @@
-#ifndef COLLECTION_DELIVERY_H
-#define COLLECTION_DELIVERY_H
+#ifndef COLLECTION_DELIVERY_HPP
+#define COLLECTION_DELIVERY_HPP
 
-#include "ParcelIntake.h"
-#include "CircularQueue.h"
+#include "ParcelIntake.hpp"
+#include "CircularQueue.hpp"
 #include <string>
 
 // ==================================================
@@ -73,4 +73,4 @@ public:
     void runMenu();
 };
 
-#endif // COLLECTION_DELIVERY_H
+#endif // COLLECTION_DELIVERY_HPP
