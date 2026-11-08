@@ -1,152 +1,185 @@
 #include <iostream>
 #include <string>
-#include <limits>
-#include "task4.cpp"
+#include <cctype>
+ 
+#include "modules/ParcelIntake.hpp"
+#include "modules/ServiceManager.hpp"
+#include "modules/CollectionDelivery.hpp"
+#include "modules/ActivityManager.hpp"
+ 
 using namespace std;
-
-const string PARCEL_FILE = "data/parcels.csv";
+ 
+const string PARCEL_FILE   = "data/parcels.csv";
 const string ACTIVITY_FILE = "data/activities.csv";
 
-int readInt(const string& prompt){
-    int value;
-    while (true) {
-        cout << prompt;
-        if(cin >> value){
-            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // clear the input buffer
-            return value;
-        } else {
-            cout << "[Error] Invalid input. Please enter a valid integer." << endl;
-            cin.clear(); // clear the error flag
-            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // discard invalid input
+// Remove whitespace from the start and end
+string trimText(const string& value){
+    size_t start = 0;
+    size_t end = value.length();
+    while(start < end && isspace(static_cast<unsigned char>(value[start])))
+    start++;
+    while (end > start && isspace(static_cast<unsigned char>(value[end - 1])))
+    end--;
+    return value.substr(start, end - start);
+}
+
+//Task 1 menu
+void runTask1Menu(ParcelIntake& parcelsystem){
+    string input;
+
+    while (true){
+        cout << "\n========================================\n";
+        cout << " TASK 1: PARCEL INTAKE AND PROCESSING\n";
+        cout << "----------------------------------------\n";
+        cout << "1. Register New Parcel\n";
+        cout << "2. Display All Parcels\n";
+        cout << "3. Search Parcel\n";
+        cout << "4. Display Pending Queue\n";
+        cout << "5. Process Next Parcel\n";
+        cout << "6. Update Parcel\n";
+        cout << "7. Remove Parcel\n";
+        cout << "8. Report Missing Parcel\n";
+        cout << "0. Back\n";
+        cout << "========================================\n";
+        cout << "Enter your choice: ";
+
+        getline(cin, input);
+        input = trimText(input);
+
+        if(input.length() != 1 || input[0] < '0' || input[0] > '8'){
+            cout << "Invalid choice. Try again.\n";
+            continue;
         }
-    }
 
-}
+        choice = input[0] - '0';
 
-string readWord(const string& prompt){
-    string text;
-    cout << prompt;
-    cin >> text;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n'); // clear the input buffer
-    return text;
-}
+        switch (choice) {
+            case 1:
+                parcelSystem.registerParcel();
+                break;
 
-void recordActivityMenu(ActivityManager& manager){
-    string parcelId = readWord("Parcel ID: ");
-    cout << "Type : " << "\n" <<
-            "0 REGISTER " << "\n" <<
-            "1 SORT" << "\n" <<
-            "2 CREATE_REQUEST" << "\n" <<
-            "3 ASSIGN_RESOURCE" << "\n" <<
-            "4 COLLECT" << "\n" <<
-            "5 DELIVER" << "\n" <<
-            "6 RETURN" << "\n" <<
-            "7 CANCEL" << "\n" <<
-            "8 HOLD" << "\n" <<
-            "9 MARK_MISSING" << "\n";
-    int type = readInt("Activity type: ");
-    if (type < 0 || type > 9){
-        cout << "[Error] Invalid activity type.\n";
-        return;
+            case 2:
+                parcelSystem.displayAllParcels();
+                break;
+
+            case 3:
+                parcelSystem.searchParcel();
+                break;
+
+            case 4:
+                parcelSystem.displayPendingQueue();
+                break;
+
+            case 5:
+                parcelSystem.processNextParcel();
+                break;
+
+            case 6:
+                parcelSystem.updateParcel();
+                break;
+
+            case 7:
+                parcelSystem.removeParcel();
+                break;
+
+            case 8:
+                parcelSystem.reportMissingParcel();
+                break;
+
+            case 0:
+                cout << "\nExiting Task 1 module...\n";
+                break;
+
+            default:
+                cout << "Invalid choice.\n";
+        }
+
+    } while (choice != 0);
+
+    return 0;
+};
+
+//Save parcels and activity history
+bool saveAllData(ParcelIntake& intake, ActivityManager& activity){
+    bool parcelsSaved = intake.saveToCSV(PARCEL_FILE);
+    bool activitiesSaved = activity.saveToCSV(ACTIVITY_FILE);
+    if(parcelsSaved && activitiesSaved){
+        cout << "[Success] Parcels and activity history saved.\n";
+        return true;
     }
-    cout << "Status: " << "\n" <<
-            "0 ARRIVED " << "\n" <<
-            "1 REGISTERED" << "\n" <<
-            "2 SORTED" << "\n" <<
-            "3 REQUEST_CREATED" << "\n" <<
-            "4 ASSIGNED" << "\n" <<
-            "5 COLLECTED" << "\n" <<
-            "6 DELIVERED" << "\n" <<
-            "7 RETURNED" << "\n" <<
-            "8 CANCELLED" << "\n" <<
-            "9 ON_HOLD" << "\n" <<
-            "10 MISSING" << "\n";
-    int status = readInt("New status: ");
-    if(status < 0 || status > 10){
-        cout << "[Error] Invalid status.\n";
-        return;
-    }
-    string requestId = readWord("Request ID (- if none): ");
-    string resourceId = readWord("Resource ID (- if none): ");
-    string staffId = readWord("Staff ID: ");
-    if(manager.recordActivity(parcelId, (ActivityType)type, (ParcelStatus)status, requestId, resourceId, staffId))
-    cout << "[Success] Activity recorded.\n";
+    return false;
 }
 
 int main(){
-    ParcelRegistry registry;
-    ActivityManager manager(registry);
+    cout << "========================================\n";
+    cout << "  SMART CAMPUS PARCEL MANAGEMENT SYSTEM\n";
+    cout << "========================================\n";
 
-    int parcelsLoaded = registry.loadFromCSV(PARCEL_FILE);
-    if(parcelsLoaded >= 0){
-        cout << "Loaded " << parcelsLoaded << " parcels.\n";
-    }else{
-        cout << "[Warning] Cannot open " << PARCEL_FILE << " - starting empty.\n";
-    }
+    // ---- Load sample data (parcels FIRST, then the activity history) ----
+    int parcelsLoaded = intake.loadFromCSV(PARCEL_FILE);
+    if (parcelsLoaded >= 0) cout << "Loaded " << parcelsLoaded << " parcels.\n";
+    else cout << "[Warning] Cannot open " << PARCEL_FILE << " - starting empty.\n";
+ 
+    int activitiesLoaded = activity.loadFromCSV(ACTIVITY_FILE);
+    if (activitiesLoaded >= 0) cout << "Loaded " << activitiesLoaded << " activity records.\n";
+    else cout << "[Warning] Cannot open " << ACTIVITY_FILE << " - starting empty.\n";
 
-    int activitiesLoaded = manager.loadFromCSV(ACTIVITY_FILE);
-    if(activitiesLoaded >= 0){
-        cout << "Loaded " << activitiesLoaded << " activity records.\n";
-    }else{
-        cout << "[Warning] Cannot open " << ACTIVITY_FILE << " - starting empty.\n";
-    }
-
-    int choice;
+    //Staff Identification
+    string staffId;
     do{
-        cout << "\n===== Task 4 : Parcel Activity & Record Management =====\n"
-             << "1. Display recent activities\n"
-             << "2. Display / review activity history of a parcel\n"
-             << "3. Undo an activity\n"
-             << "4. Record a new activity (integration demo)\n"
-             << "5. Save data to CSV\n"
-             << "0. Exit\n";
-        choice = readInt("Task choice: ");
+        cout << "Enter your Staff ID: ";
+        getline(cin, staffId);
+        staffId = trimText(staffId);
+    }while(staffId.empty());
+    activity.setStaffId(staffId);
 
-        switch (choice){
-            case 1: {
-                int limit = readInt("How many recent activities? ");
-                if (limit <= 0){
-                    cout << "[Error] Number must be positive.\n";
-                }else{
-                    manager.displayRecentActivities(limit);
-                    
-                }
-                break;
-            }
-            case 2:{
-                manager.displayParcelHistory(readWord("Parcel ID: "));
-                break;
-            }
-            case 3: {
-                string parcelId = readWord("Parcel ID: ");
-                manager.displayParcelHistory(parcelId);
-                int activityId = readInt("Activity ID to reverse: ");
-                manager.undoActivity(parcelId, activityId, readWord("Your Staff ID: "));
-                break;
-            }
-            case 4: {
-                recordActivityMenu(manager);
-                break;
+    // Main Menu
+    string input;
+    while(true){
+        cout << "\n========================================\n";
+        cout << "  MAIN MENU   (Staff: " << staffId << ")\n";
+        cout << "========================================\n";
+        cout << "1. Parcel Intake, Sorting & Processing   (Task 1)\n";
+        cout << "2. Parcel Service & Collection Requests  (Task 2)\n";
+        cout << "3. Collection Counter & Delivery         (Task 3)\n";
+        cout << "4. Activity History & Undo               (Task 4)\n";
+        cout << "5. Parcel Category Organisation          (Task 5)\n";
+        cout << "6. Save Data to CSV\n";
+        cout << "0. Exit\n";
+        cout << "========================================\n";
+        cout << "Enter your choice: ";
 
+        getline(cin, input);
+        input = trimText(input);
+
+        if (input == "1") {
+            runTask1Menu(intake);
+        } else if (input == "2") {
+            service.runMenu();
+        } else if (input == "3") {
+            delivery.runMenu();
+        } else if (input == "4") {
+            activity.runMenu();
+        } else if (input == "5") {
+            cout << "\nTask 5 (category tree) is not integrated yet.\n";
+        } else if (input == "6") {
+            saveAllData(intake, activity);
+        } else if (input == "0") {
+            cout << "Save data before exiting? (Y/N): ";
+            string answer;
+            getline(cin, answer);
+            answer = trimText(answer);
+            if (answer == "Y" || answer == "y") {
+                saveAllData(intake, activity);
             }
-            case 5: {
-                if(registry.saveToCSV(PARCEL_FILE) && manager.saveToCSV(ACTIVITY_FILE)){
-                    cout << "[Success] Data saved.\n";
-                }
-                break;
-            }
-            case 0: {
-                cout << "Exiting. \n";
-                break;
-            }
-            default:{
-                cout << "[Error] Invalid menu choice.\n";
-            }
+            cout << "\nExiting system. Goodbye!\n";
+            break;
+        } else {
+            cout << "Invalid choice. Try again.\n";
         }
-    } while (choice != 0);
+    }
+ 
     return 0;
-        
 }
 
-        
     
