@@ -125,6 +125,7 @@ bool isCompleted(const string& status) {
 }
 
 // Check whether an operation is permitted
+
 bool canChangeStatus(
     const string& current,
     const string& next
@@ -133,31 +134,52 @@ bool canChangeStatus(
         return false;
     }
 
+    // Prevent normal processing of missing parcels
+    if (current == "Missing") {
+        return false;
+    }
+
+    // Allow cancellation and missing parcel reporting
     if (next == "Cancelled" || next == "Missing") {
-        return current != "Missing";
+        return true;
     }
 
+    // Allow investigation
     if (next == "On Hold") {
-        return current != "On Hold";
+        return true;
     }
 
+    // Restore a parcel for sorting
     if (next == "Pending Sorting") {
         return current == "On Hold" ||
                current == "Special Handling";
     }
 
+    // Allow normal sorting transitions
+    if (next == "Ready for Collection" ||
+        next == "Awaiting Delivery Assignment" ||
+        next == "Special Handling" ||
+        next == "Return to Sender") {
+
+        return current == "Pending Sorting";
+    }
+
+    // Allow collection completion
     if (next == "Collected") {
         return current == "Ready for Collection";
     }
 
+    // Allow delivery completion
     if (next == "Delivered") {
         return current == "Awaiting Delivery Assignment";
     }
 
+    // Allow return completion
     if (next == "Returned") {
         return current == "Return to Sender";
     }
 
+    // Reject all other transitions
     return false;
 }
 
@@ -536,42 +558,62 @@ void ParcelIntake::processNextParcel() {
 // Requirement 4: Status Changes
 // Controlled status updates for integrated modules
 
+
 bool ParcelIntake::updateParcelStatus(
     const string& parcelID,
     const string& newStatus
 ) {
     ParcelNode* found = findParcelNode(parcelID);
 
+    // Check whether parcel exists
     if (found == nullptr) {
         return false;
     }
 
     Parcel& parcel = found->data;
 
+    // Validate status transition
     if (!canChangeStatus(parcel.status, newStatus)) {
         return false;
     }
 
-    // Restore eligible parcels to the intake queue
+    // Manage incoming queue
     if (newStatus == "Pending Sorting") {
         enqueue(parcelID);
-        parcel.nextAction = "Not Assigned";
     } else {
-        // Remove parcels that must no longer be sorted
         removeFromQueue(parcelID);
     }
 
+    // Update parcel status
     parcel.status = newStatus;
 
-    if (newStatus == "Cancelled") {
-        parcel.nextAction = "None";
-    } else if (newStatus == "Missing" ||
-               newStatus == "On Hold") {
+    // Update corresponding next action
+    if (newStatus == "Pending Sorting") {
+        parcel.nextAction = "Not Assigned";
+    }
+    else if (newStatus == "Ready for Collection") {
+        parcel.nextAction = "Collection";
+    }
+    else if (newStatus == "Awaiting Delivery Assignment") {
+        parcel.nextAction = "Campus Delivery";
+    }
+    else if (newStatus == "Special Handling") {
+        parcel.nextAction = "Special Handling";
+    }
+    else if (newStatus == "Return to Sender") {
+        parcel.nextAction = "Return";
+    }
+    else if (newStatus == "On Hold" ||
+             newStatus == "Missing") {
         parcel.nextAction = "Investigation";
-    } else if (newStatus == "Collected" ||
-               newStatus == "Delivered" ||
-               newStatus == "Returned") {
+    }
+    else if (newStatus == "Collected" ||
+             newStatus == "Delivered" ||
+             newStatus == "Returned") {
         parcel.nextAction = "Completed";
+    }
+    else if (newStatus == "Cancelled") {
+        parcel.nextAction = "None";
     }
 
     return true;
