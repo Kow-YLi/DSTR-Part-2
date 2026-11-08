@@ -1,0 +1,6 @@
+parcelId,status,requestId,resourceId
+P001,ASSIGNED,R100,CNT1
+P002,ON_HOLD,-,-
+P003,ARRIVED,-,-
+P004,SORTED,-,-
+P005,COLLECTED,-,CNT2
