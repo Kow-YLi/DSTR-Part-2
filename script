@@ -1,0 +1,248 @@
+My assigned module is Task 1, which is the Parcel Intake, Sorting and Processing Module. 
+The main purpose of this module is to manage incoming parcels when they arrive at the campus delivery centre.
+The system allows staff to register new parcels, maintain parcel information, search for specific parcels, process parcels according to their next required action, update or remove records, and handle exceptional conditions such as duplicate Parcel IDs and missing parcels.
+
+For this module, I implemented two main data structures manually in C++: a //Singly Linked List and a FIFO Queue//.
+
+//The Singly Linked List stores registered parcel records, while the FIFO Queue manages parcels waiting to be processed in their arrival order.
+
+File	Explanation: 
+Parcel.h	-> Defines the parcel information
+ParcelIntake.h -> Declares the ParcelIntake class, node structures and functions
+ParcelIntake.cpp -> Implements linked-list, queue and parcel management operations
+task1_test.cpp ->	Provides the menu for testing Task 1
+
+//File 1 -> Parcel.h: The Parcel structure groups all information about a parcel into one record. Each parcel is stored as one Parcel object inside a linked-list node.
+
+struct Parcel {
+    std::string parcelID;
+    std::string recipientName;
+    std::string recipientID;
+    std::string deliveryCompany;
+    std::string parcelType;
+    std::string arrivalDateTime;
+    std::string status;
+    std::string nextAction;
+};
+
+//file 2 -> parcelintake.h: This file declares your ParcelIntake class and the data structures it uses. 
+
+1. singly linked list 
+
+struct ParcelNode {
+    Parcel data;
+    ParcelNode* next;
+};
+
+The node contains two components:
+- data: Stores one complete Parcel record.
+- next: Stores a pointer to the next node.
+
+SLL is used: A Singly Linked List allows parcel records to be dynamically added or removed without requiring a fixed-size array. It supports sequential searching and traversal. 
+
+2. FIFO
+
+struct QueueNode {
+    std::string parcelID;
+    QueueNode* next;
+};
+
+The Queue stores only the Parcel ID, not a duplicate of the entire record.
+FIFO is used: The FIFO Queue ensures that parcels are selected for intake processing in the order they were registered.
+
+3. LL and Queue pointers 
+
+ParcelNode* head; -> Points to the first registered parcel record
+
+QueueNode* front; -> Points to the next parcel awaiting processing
+QueueNode* rear; -> Points to the last parcel waiting in the queue
+
+
+//file 3: parcelintake.cpp 
+
+1. construtor (initialise data structure) 
+
+ParcelIntake::ParcelIntake()
+    : head(nullptr), front(nullptr), rear(nullptr) {
+}
+
+when a parcelintake object is created, the construct, front and rear to nullptr. this indicates that no parcel records or queud parcel is currently exits. using nullptr used to prevents the pointer from containing uninitialised memory address.
+
+2. destructor (release memory) 
+
+ParcelIntake::~ParcelIntake() {
+    while (front != nullptr) {
+        dequeue();
+    }
+
+    while (head != nullptr) {
+        ParcelNode* temp = head;
+        head = head->next;
+        delete temp;
+    }
+}
+
+destructor releases allocated memory when parcelintake object is destroyed.
+
+1. It repeatedly calls dequeue() until the incoming queue is empty.
+2. It starts deleting parcel records from head.
+3. A temporary pointer saves the current node.
+4. head moves to the next node.
+5. delete temp releases the previous node.
+6. This repeats until the linked list is empty.
+
+singly link list: 
+1. findParcelNode() -> linear search algorithm
+2. insertParcel()
+
+fifo: 
+1. enqueue() -> insert into queue 
+
+void ParcelIntake::enqueue(const string& parcelID) {
+    if (isQueued(parcelID)) {
+        return;
+    }
+
+    QueueNode* newNode =
+        new QueueNode{parcelID, nullptr};
+
+    if (rear == nullptr) {
+        front = rear = newNode;
+    } else {
+        rear->next = newNode;
+        rear = newNode;
+    }
+}
+
+1. Call isQueued() to prevent the Parcel ID from appearing twice in the queue.
+2. Create a new queue node.
+3. If the queue is empty, both front and rear point to the new node.
+4. Otherwise, connect the old rear node to the new node.
+5. Update rear to point to the new node.
+This follows FIFO because new parcels are always added to the rear.
+
+2. dequeue() -> remove from queue 
+
+void ParcelIntake::dequeue() {
+    if (isQueueEmpty()) {
+        cout << "Error: Incoming queue is empty.\n";
+        return;
+    }
+
+    QueueNode* temp = front;
+    front = front->next;
+
+    if (front == nullptr) {
+        rear = nullptr;
+    }
+
+    delete temp;
+}
+
+1. Check whether the queue is empty.
+2. Store the current front node in temp.
+3. Move front to the next node.
+4. If the queue becomes empty, set rear to nullptr.
+5. Delete the old front node.
+
+3. removefromqueue() -> remove a specific parcel 
+
+This function is different from normal FIFO dequeue().
+
+It is required when a parcel must be removed before reaching the front, such as when it is cancelled or reported missing.
+
+The function uses two pointers, current and previous, to locate the target queue node and reconnect the surrounding nodes.
+
+It also updates front or rear when the removed node is at either end.
+
+Its worst-case time complexity is O(q).
+
+//req 1: registerparcel()
+// IMPORTANT 
+
+insertParcel(parcel); -> to store the record.
+enqueue(parcel.parcelID); -> to place the Parcel ID into the processing queue
+
+-> The first stores the full parcel record, while the second schedules it for FIFO processing.
+
+//req2: displayallparcels() and searchparcel()
+displayAllParcels() starts from the head of the linked list and traverses each node until reaching nullptr.
+
+searchParcel() accepts a Parcel ID and uses findParcelNode() to locate the matching record. If no record is found, it displays an error message.
+
+//req3: processnextparcel()
+The function begins by checking whether the incoming queue is empty.
+
+If parcels exist, it obtains the Parcel ID at front, searches for the corresponding record and verifies that its status is Pending Sorting.
+
+The switch statement determines which status and next action to assign.
+
+Afterward, dequeue() removes the processed parcel from the intake queue, while the linked-list record remains available.
+
+//req4: updateparcel() and removeparcel()
+
+removeParcel() traverses the linked list using current and previous pointers. It only permits physical removal when the parcel has a terminal status: Collected, Delivered, Returned or Cancelled.
+
+//req5: reportmissingparcel() and exception handling 
+
+Condition	Handling
+Duplicate Parcel ID	                 Reject registration
+Empty required information	         Request valid input
+Invalid date/time	                   Reject the date/time
+Non-existent Parcel ID	             Display parcel not found
+Empty processing queue	             Prevent dequeue and processing
+Missing parcel	                     Mark Missing and remove from intake queue
+Already completed parcel	           Reject inappropriate operations
+Invalid status transition	           Reject update
+
+Function	          Time complexity	           Reason
+findParcelNode()	      O(n)	             Linear linked-list search
+insertParcel()	        O(n)             Traverses to final node
+enqueue()	              O(q)	            Checks for duplicate queue entries first
+dequeue()  	            O(1)	          Removes front node directly
+displayAllParcels()	    O(n)	                 Visits every record
+searchParcel()	        O(n)	                   Linear search
+processNextParcel()	    O(n)	         Searches for the parcel record
+removeFromQueue()	      O(q)	           May traverse the queue
+removeParcel()	        O(n + q)	     Searches list and may update queue
+
+Here, \(n\) represents the number of registered parcel records and \(q\) represents the number of incoming queue entries.
+
+
+Q1. Why use both a Singly Linked List and a Queue?
+
+The linked list maintains the full parcel records, while the queue controls processing order. Removing a parcel from the queue does not delete its record.
+
+Q2. Why not use an array?
+
+A linked list can grow dynamically without a predetermined capacity. However, it has additional pointer memory overhead and slower random access.
+
+Q3. Why is FIFO appropriate?
+
+It supports first-come, first-served intake processing, reducing the likelihood of earlier parcels being overlooked.
+
+Q4. What is the difference between enqueue and dequeue?
+
+Enqueue adds a parcel to the rear of the queue, while dequeue removes the parcel at the front.
+
+Q5. What happens if the queue is empty?
+
+The system checks the front pointer before processing, prints an error and avoids accessing an invalid node.
+
+Q6. What happens after a parcel is processed?
+
+Its queue node is removed, but its parcel record remains stored in the linked list with an updated status.
+
+Q7. How does the system prevent memory leaks?
+
+The destructor traverses and deletes dynamically allocated queue and linked-list nodes when the object is destroyed.
+
+Q8. How does Task 1 communicate with other modules?
+
+The public getParcel() and updateParcelStatus() functions provide access to parcel information and controlled status changes. Actual routing into teammates' structures still requires integration.
+
+
+
+
+
+
