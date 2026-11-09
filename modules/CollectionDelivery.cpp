@@ -8,7 +8,7 @@ using namespace std;
 
 namespace {
 
-// Remove whitespace from the start and end
+
 string trim(const string& value) {
     size_t start = 0;
     size_t end = value.length();
@@ -26,7 +26,6 @@ string trim(const string& value) {
     return value.substr(start, end - start);
 }
 
-// Read a required field
 string readRequired(const string& prompt) {
     string value;
 
@@ -44,7 +43,7 @@ string readRequired(const string& prompt) {
     return value;
 }
 
-// Read a Y/N answer
+
 bool readYesNo(const string& prompt) {
     while (true) {
         string answer = readRequired(prompt);
@@ -61,24 +60,24 @@ bool readYesNo(const string& prompt) {
     }
 }
 
-} // namespace
+} 
 
 // ==================================================
 // Constructor
 // ==================================================
 
-//Changes: logger starts as nullptr (no task 4 attached yet)
+
 CollectionDelivery::CollectionDelivery(ParcelIntake& sharedIntake)
     : intake(sharedIntake), riderCount(0), logger(nullptr), service(nullptr) {      
 
-    // Default campus delivery riders
+    
     addRider("R1", "Aiman");
     addRider("R2", "Siti");
     addRider("R3", "Kumar");
     addRider("R4", "Mei Ling");
 }
 
-// Add a rider and place them in the rotation
+
 void CollectionDelivery::addRider(
     const string& riderID,
     const string& name
@@ -96,7 +95,7 @@ void CollectionDelivery::addRider(
 // Helpers
 // ==================================================
 
-// Check whether a parcel is already waiting at the counter
+
 bool CollectionDelivery::isInCounterQueue(
     const string& parcelID
 ) const {
@@ -113,7 +112,6 @@ bool CollectionDelivery::isInCounterQueue(
     return false;
 }
 
-// Find which rider is carrying a parcel (-1 if none)
 int CollectionDelivery::findRiderByParcel(
     const string& parcelID
 ) const {
@@ -126,7 +124,6 @@ int CollectionDelivery::findRiderByParcel(
     return -1;
 }
 
-// Find a rider by Rider ID (-1 if none)
 int CollectionDelivery::findRiderByID(
     const string& riderID
 ) const {
@@ -143,7 +140,7 @@ int CollectionDelivery::findRiderByID(
 // Collection Counter (Circular Queue 1)
 // ==================================================
 
-// A recipient arrives and joins the counter line
+
 void CollectionDelivery::joinCollectionQueue() {
     cout << "\n========== JOIN COLLECTION QUEUE ==========\n";
 
@@ -156,7 +153,6 @@ void CollectionDelivery::joinCollectionQueue() {
 
     string parcelID = readRequired("Enter Parcel ID to collect: ");
 
-    // Read the shared record from Module 1
     Parcel parcel;
     if (!intake.getParcel(parcelID, parcel)) {
         cout << "Error: Parcel not found.\n";
@@ -177,8 +173,6 @@ void CollectionDelivery::joinCollectionQueue() {
 
     counterQueue.enqueue(parcelID);
 
-    //Changes: task 4: record that the counter was assigned (recource "COUNTER"; the parcel status does not change here).
-    //The parcel's Task 2 service request (if any) is stored with it.
     if(logger != nullptr){
         logger->recordActivity(parcelID, ACT_ASSIGN_RESOURCE,
                                parcel.status, parcel.status,
@@ -192,7 +186,6 @@ void CollectionDelivery::joinCollectionQueue() {
     cout << "Queue Position : " << counterQueue.size() << "\n";
 }
 
-// The counter serves the customer at the front
 void CollectionDelivery::serveNextCustomer() {
     cout << "\n========== SERVE NEXT CUSTOMER ==========\n";
 
@@ -219,7 +212,7 @@ void CollectionDelivery::serveNextCustomer() {
     cout << "Recipient Name       : " << parcel.recipientName << "\n";
     cout << "Parcel Type          : " << parcel.parcelType << "\n";
 
-    // Identity check before handing over the parcel
+    
     string recipientID =
         readRequired("Enter customer's Recipient ID to verify: ");
 
@@ -231,10 +224,7 @@ void CollectionDelivery::serveNextCustomer() {
         return;
     }
 
-    // Update the shared record through Module 1
-    //Changes: Add  findLinkedRequest(parcelID), "COUNTER"
-    //Also telss task 4 which resource handled it(the COLLECT activity itself is recorded inside Task 1's updateParcelStatus)
-    //the linked task 2 request ID is stored with the COLLECT activity
+    
     if (intake.updateParcelStatus(parcelID, "Collected", findLinkedRequest(parcelID), "COUNTER")) {
         counterQueue.dequeue();
         cout << "\nParcel collected successfully!\n";
@@ -288,7 +278,6 @@ void CollectionDelivery::displayCounterQueue() const {
 // Delivery Resources (Circular Queue 2)
 // ==================================================
 
-// Give a parcel to the next free rider (round-robin)
 void CollectionDelivery::assignDelivery() {
     cout << "\n========== ASSIGN DELIVERY ==========\n";
 
@@ -327,9 +316,7 @@ void CollectionDelivery::assignDelivery() {
     riders[index].status = "On Delivery";
     riders[index].currentParcelID = parcelID;
 
-    //Changes: task 4: record the rider assignment
-    //resource = rider ID; the parcel status does not change here
-    //The parcel's task 2 service request is stored with it
+
     if(logger != nullptr){
         logger->recordActivity(parcelID, ACT_ASSIGN_RESOURCE,
                                parcel.status, parcel.status,
