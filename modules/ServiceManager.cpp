@@ -179,7 +179,7 @@ void ServiceManager::createRequest() {
 
     //Changes: the service type must match how task 1 sorted the parcel
     string requiredStatus;
-    if(newRequest.serviceType == "Special Handing"){
+    if(newRequest.serviceType == "Special Handling"){
         requiredStatus = "Special Handling";
     }else if(newRequest.serviceType == "Re-delivery" || newRequest.serviceType == "Campus Delivery"){
         requiredStatus = "Awaiting Delivery Assignment";

@@ -90,8 +90,8 @@ void runTask1Menu(ParcelIntake& parcelSystem){
                 break;
 
             case 0:
-                cout << "\nExiting Task 1 module...\n";
-                break;
+                cout << "\nReturning to Main Menu...\n";
+                return;
 
             default:
                 cout << "Invalid choice.\n";

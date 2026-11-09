@@ -197,6 +197,11 @@ bool ActivityManager::undoActivity(const string& parcelId, int activityId) {
         cout << "[Error] No activities recorded to undo.\n";
         return false;
     }
+    // Check whether there is space to record the undo activity
+    if (history.isFull()) {
+        cout << "[Error] Activity history is full. Cannot record undo.\n";
+        return false;
+    }
 
     ActivityStack aux;
     ActivityRecord r, target;
