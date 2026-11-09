@@ -4,4 +4,5 @@ activityId,timestamp,parcelId,activityType,previousStatus,newStatus,previousNext
 3,2026-11-03 11:30:00,PX0003,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S02,0
 4,2026-11-04 08:50:00,PX0005,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S02,0
 5,2026-11-04 14:20:00,PX0006,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S01,0
-6,2026-11-04 14:25:00,PX0006,SORT,Pending Sorting,Ready for Collection,Not Assigned,Collection,-,-,S01,0
+6,2026-11-04 14:25:00,PX0006,SORT,Pending Sorting,Ready for Collection,Not Assigned,Collection,-,-,S01,1
+7,2026-11-09 21:54:59,PX0006,UNDO,Ready for Collection,Pending Sorting,Collection,Not Assigned,-,-,S001,0
