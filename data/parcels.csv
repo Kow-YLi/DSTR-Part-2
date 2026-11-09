@@ -1,6 +1,11 @@
-parcelId,status,requestId,resourceId
-P001,ASSIGNED,R100,CNT1
-P002,ON_HOLD,-,-
-P003,ARRIVED,-,-
-P004,SORTED,-,-
-P005,COLLECTED,-,CNT2
+﻿parcelID,recipientName,recipientID,deliveryCompany,parcelType,arrivalDateTime,status,nextAction,weight
+PX0001,Tan Wei Ming,TP070001,J&T Express,Electronics,2026-11-02 09:15,Delivered,Completed,2.4
+PX0002,Aisha Rahman,TP070002,Pos Laju,Documents,2026-11-02 10:02,Pending Sorting,Not Assigned,0.2
+PX0003,Lee Jun Hao,TP070003,Shopee Express,Books,2026-11-03 11:30,Collected,Completed,1.1
+PX0004,Grace Lim,TP070004,Ninja Van,Clothing,2026-11-03 13:45,Pending Sorting,Not Assigned,0.8
+PX0005,Muhammad Faiz,TP070005,DHL,Food,2026-11-04 08:50,On Hold,Investigation,3.5
+PX0006,Nurul Ain,TP070006,Pos Laju,Documents,2026-11-04 14:20,Ready for Collection,Collection,0.1
+PX0007,Chong Xin Yi,TP070007,J&T Express,Electronics,2026-11-05 09:40,Awaiting Delivery Assignment,Campus Delivery,5.2
+PX0008,Ravi Kumar,TP070008,Ninja Van,Books,2026-11-05 15:10,Pending Sorting,Not Assigned,0.9
+PX0009,Siti Zubaidah,TP070009,Shopee Express,Clothing,2026-11-06 10:05,Returned,Completed,1.3
+PX0010,Ong Hui Min,TP070010,DHL,Others,2026-11-06 16:35,Pending Sorting,Not Assigned,0.6

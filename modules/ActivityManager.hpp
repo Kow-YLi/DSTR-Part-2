@@ -101,13 +101,16 @@ public:
     void setStaffId(const std::string& staffId);
  
     // Req 1: called by Tasks 1, 2 and 3 whenever something changes
-    virtual void logActivity(const std::string& parcelID, ActivityType type,
-                             const std::string& previousStatus,
-                             const std::string& newStatus,
-                             const std::string& previousNextAction,
-                             const std::string& newNextAction,
-                             const std::string& requestID,
-                             const std::string& resourceID);
+    // [INTEGRATION FIX] Was named logActivity(), but the ActivityLogger interface that Tasks 1-3 call
+    // declares recordActivity() as pure virtual. With the old name ActivityManager stayed abstract
+    // (could not be created) and nothing was ever recorded. Renamed + marked override.
+    virtual void recordActivity(const std::string& parcelID, ActivityType type,
+                                const std::string& previousStatus,
+                                const std::string& newStatus,
+                                const std::string& previousNextAction,
+                                const std::string& newNextAction,
+                                const std::string& requestID,
+                                const std::string& resourceID) override;
                   
     // Req 2 & 3: display and review
     void displayRecentActivities(int limit);        //newest first
@@ -128,6 +131,3 @@ public:
 };
  
 #endif // ACTIVITY_MANAGER_HPP
-
-
-

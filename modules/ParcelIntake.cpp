@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <string>
 #include <cctype>
+#include <cstdlib>
 
 using namespace std;
 
@@ -29,6 +30,22 @@ string trim(const string& value) {
     return value.substr(start, end - start);
 }
 
+//Ask for a parcel weight in kg until a valid number is entered
+double readWeight(const string& prompt) {
+    string value;
+    while (true) {
+        cout << prompt;
+        getline(cin, value);
+        value = trim(value);
+        char* endPtr = nullptr;
+        double weight = strtod(value.c_str(), &endPtr);
+        if (!value.empty() && *endPtr == '\0' && weight > 0.0 && weight <= 100.0) {
+            return weight;
+        }
+        cout << "Error: weight must be a number greater than 0 and at most 100 (kg).\n";
+    }
+}
+ 
 // Read a required field
 string readRequired(const string& prompt) {
     string value;
@@ -707,8 +724,9 @@ void ParcelIntake::updateParcel() {
     cout << "7. Mark as Returned\n";
     cout << "8. Cancel Parcel\n";
     cout << "9. Release for Re-Sorting\n";
+    cout << "10. Weight\n";
 
-    int choice = readChoice(1, 9);
+    int choice = readChoice(1, 10);
     bool updated = false;
 
     switch (choice) {
@@ -755,6 +773,11 @@ void ParcelIntake::updateParcel() {
         case 9:
             updated =
                 updateParcelStatus(parcelID, "Pending Sorting");
+            break;
+
+        case 10:
+            parcel.weight = readWeight("Enter New Weight in KG: ");
+            updated = true;
             break;
     }
 
@@ -900,9 +923,9 @@ int ParcelIntake::loadFromCSV(const string& filePath){
         return -1;
     }
 
-    string line, f[8];
+    string line, f[9];
     int loaded = 0, lineNo = 0;
-    getline(file, line);
+    getline(file, line);    //Skip Header
 
     while(getline(file, line)){
         ++lineNo;
@@ -910,7 +933,7 @@ int ParcelIntake::loadFromCSV(const string& filePath){
 
         // 8 colums, unique ID, valid date or time (reuses task 1 validator)
 
-        bool valid = (splitCsvLine(line, f, 8) == 8) &&
+        bool valid = (splitCsvLine(line, f, 9) == 9) &&
         !f[0].empty() &&
         findParcelNode(f[0]) == nullptr &&
         isValidDateTime(f[5]) &&
@@ -930,6 +953,7 @@ int ParcelIntake::loadFromCSV(const string& filePath){
         parcel.arrivalDateTime = f[5];
         parcel.status          = f[6];
         parcel.nextAction      = f[7];
+        parcel.weight          = f[8].empty() ? 0.0 : atof(f[8].c_str());
 
         insertParcel(parcel);       //Task 1 linked-list insert
 
@@ -939,6 +963,78 @@ int ParcelIntake::loadFromCSV(const string& filePath){
         ++loaded;
     }
     return loaded;
+}
+
+//Changes: task 5: Edit recipient name / parcel type without prompting (used by Task 5 menu).
+bool ParcelIntake::updateParcelDetails(const string& parcelID, const string& newRecipientName, const string& newParcelType, double newWeight){
+    ParcelNode* found = findParcelNode(parcelID);
+    if(found == nullptr || isCompleted(found->data.status)){
+        return false;
+    }
+    if(newRecipientName.empty() || newParcelType.empty() || newWeight <= 0.0){   // [WEIGHT]
+        return false;
+    }
+    found->data.recipientName = newRecipientName;
+    found->data.parcelType = newParcelType;
+    found->data.weight = newWeight;      // [WEIGHT]
+    return true;
+}
+
+//Task 1's own date/time validator, made available to other modules
+bool ParcelIntake::isValidArrivalDateTime(const string& value){
+    return isValidDateTime(value);
+}
+
+//Register without prompts: same checks and steps as registerParcel()
+bool ParcelIntake::addParcel(const Parcel& newParcel){
+    if(newParcel.parcelID.empty() || newParcel.recipientName.empty() || newParcel.recipientID.empty() ||
+       newParcel.deliveryCompany.empty() || newParcel.parcelType.empty() ||
+       newParcel.weight <= 0.0 || newParcel.weight > 100.0){
+        cout << "Error: Incomplete or invalid parcel information.\n";
+        return false;
+    }
+    if(findParcelNode(newParcel.parcelID) != nullptr){
+        cout << "Error: Parcel ID already exists.\n";
+        return false;
+    }
+    if(!isValidDateTime(newParcel.arrivalDateTime)){
+        cout << "Error: Invalid date/time.\n";
+        return false;
+    }
+    Parcel parcel = newParcel;
+    parcel.status = "Pending Sorting";      // every new parcel starts here 
+    parcel.nextAction = "Not Assigned";
+    insertParcel(parcel);
+    enqueue(parcel.parcelID);
+    logChange(parcel.parcelID, ACT_REGISTER, "-", parcel.status, "-", parcel.nextAction, "-", "-");   // Task 4
+    return true;
+}
+
+//Only finished parcels may be removed (same rule as removeParcel())
+bool ParcelIntake::isParcelRemovable(const string& parcelID) const{
+    ParcelNode* found = findParcelNode(parcelID);
+    return found != nullptr && isCompleted(found->data.status);
+}
+
+//Changes: task 5: Remove a finished parcel without prompting (same unlink steps as removeParcel()).
+bool ParcelIntake::removeParcelRecord(const string& parcelID){
+    ParcelNode* current = head;
+    ParcelNode* previous = nullptr;
+    while(current != nullptr && current->data.parcelID != parcelID){
+        previous = current;
+        current = current->next;
+    }
+    if(current == nullptr || !isCompleted(current->data.status)){
+        return false;       //not found, or still an active parcel
+    }
+    removeFromQueue(parcelID);
+    if(previous == nullptr){
+        head = current->next;
+    }else{
+        previous->next = current->next;
+    }
+    delete current;
+    return true;
 }
 
 //Number of parcel records currently stored
@@ -978,14 +1074,15 @@ bool ParcelIntake::saveToCSV(const string& filePath)const{
     }
 
     file << "parcelID,recipientName,recipientID,deliveryCompany,"
-            "parcelType,arrivalDateTime,status,nextAction\n";
+            "parcelType,arrivalDateTime,status,nextAction,weight\n";
     
     for (ParcelNode* current = head; current != nullptr; current = current->next){
         const Parcel& p = current->data;
         file << p.parcelID << "," << p.recipientName << ","
              << p.recipientID << "," << p.deliveryCompany << ","
              << p.parcelType << "," << p.arrivalDateTime << ","
-             << p.status << "," << p.nextAction << "\n";
+             << p.status << "," << p.nextAction << ","
+             << p.weight << "\n";
     }
     return true;
 }

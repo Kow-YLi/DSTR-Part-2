@@ -110,6 +110,22 @@ public:
     int getParcelCount() const;
     bool getParcelAt(int index, Parcel& result) const; 
 
+    //Task 5: Non-interactive edit / delete used by the Task 5 category module
+    bool updateParcelDetails(const std::string& parcelID,
+                             const std::string& newRecipientName,
+                             const std::string& newParcelType,
+                             double newWeight);      // [WEIGHT] new parameter
+
+    //Register a parcel without prompts (same rules/steps as registerParcel(), logs REGISTER to Task 4).
+    //Status / next action are set by Task 1 itself. false if invalid, duplicate ID or bad date.
+    bool addParcel(const Parcel& newParcel);
+    //Task 1's own date/time check, shared so Task 5 can validate input with the same rule.
+    static bool isValidArrivalDateTime(const std::string& value);
+    //true only for an existing Collected / Delivered / Returned / Cancelled parcel.
+    bool isParcelRemovable(const std::string& parcelID) const;
+    //Physically remove a parcel. Same rule as removeParcel(): only Collected / Delivered / Returned / Cancelled parcels.
+    bool removeParcelRecord(const std::string& parcelID);
+
     //Sample data in CSV
     int loadFromCSV(const std::string& filePath);       //Parcels loaded, -1 if file is missing
     bool saveToCSV(const std::string& filePath) const;

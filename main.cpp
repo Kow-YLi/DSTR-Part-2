@@ -5,7 +5,8 @@
 #include "modules/ParcelIntake.hpp"
 #include "modules/ServiceManager.hpp"
 #include "modules/CollectionDelivery.hpp"
-#include "ActivityManager.hpp"
+#include "modules/ActivityManager.hpp"
+#include "modules/ParcelCategoryManager.hpp"
  
 using namespace std;
  
@@ -24,7 +25,7 @@ string trimText(const string& value){
 }
 
 //Task 1 menu
-void runTask1Menu(ParcelIntake& parcelsystem){
+void runTask1Menu(ParcelIntake& parcelSystem){
     string input;
 
     while (true){
@@ -43,7 +44,9 @@ void runTask1Menu(ParcelIntake& parcelsystem){
         cout << "========================================\n";
         cout << "Enter your choice: ";
 
-        getline(cin, input);
+        if(!getline(cin, input)){        //stop if input is closed instead of looping forever
+            return;
+        };
         input = trimText(input);
 
         if(input.length() != 1 || input[0] < '0' || input[0] > '8'){
@@ -51,7 +54,7 @@ void runTask1Menu(ParcelIntake& parcelsystem){
             continue;
         }
 
-        choice = input[0] - '0';
+        int choice = input[0] - '0';
 
         switch (choice) {
             case 1:
@@ -92,11 +95,11 @@ void runTask1Menu(ParcelIntake& parcelsystem){
 
             default:
                 cout << "Invalid choice.\n";
+                return;
         }
 
-    } while (choice != 0);
-
-    return 0;
+    }
+    
 };
 
 //Save parcels and activity history
@@ -114,6 +117,19 @@ int main(){
     cout << "========================================\n";
     cout << "  SMART CAMPUS PARCEL MANAGEMENT SYSTEM\n";
     cout << "========================================\n";
+
+    //Changes: ONE ParcelIntake is shared by every module.
+    ParcelIntake intake;
+    ServiceManager service(intake);
+    CollectionDelivery delivery(intake);
+    ActivityManager activity(intake, service, delivery);
+    ParcelCategoryManager categories(intake);
+
+    //Changes: task 1 -3 report every changes to task 4; task 3 completes task 2 requests
+    intake.setLogger(&activity);
+    service.setLogger(&activity);
+    delivery.setLogger(&activity);
+    delivery.setServiceManager(&service);
 
     // ---- Load sample data (parcels FIRST, then the activity history) ----
     int parcelsLoaded = intake.loadFromCSV(PARCEL_FILE);
@@ -161,7 +177,7 @@ int main(){
         } else if (input == "4") {
             activity.runMenu();
         } else if (input == "5") {
-            cout << "\nTask 5 (category tree) is not integrated yet.\n";
+            categories.runMenu();
         } else if (input == "6") {
             saveAllData(intake, activity);
         } else if (input == "0") {
