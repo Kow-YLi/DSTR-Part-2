@@ -7,15 +7,6 @@
 #include "../models/ActivityLogger.hpp"
 #include <string>
 
-// ==================================================
-// Module 3: Collection Counter &
-//           Delivery Resource Management
-// --------------------------------------------------
-// Works on the SAME parcel records as Module 1
-// (through a reference to the shared ParcelIntake
-// object), so every status change made here is
-// visible in every other module.
-// ==================================================
 
 class CollectionDelivery {
 private:
@@ -89,12 +80,9 @@ public:
     //Changes:Attach task 4 activity logger
     void setLogger(ActivityLogger* activityLogger);
 
-    //Changes: attach task 2 so counter / rider work is linked to the parcel service request
     void setServiceManager(ServiceManager* serviceManager);
 
-    //Changes: task 4 undo support: cancel an earlier assignment
-    //resourceID == "COUNTER" -> remove the parcel from the counter queue
-    //otherwise -> free that rider and put them back in the rotation
+  
     bool releaseAssignment(const std::string& parcelID, const std::string& resourceID);
 };
 
