@@ -2,7 +2,7 @@
 #include <string>
 #include <cctype>
  
-#include "modules/ParcelIntake.hpp"
+#include "ParcelIntake.hpp"
 #include "modules/ServiceManager.hpp"
 #include "modules/CollectionDelivery.hpp"
 #include "modules/ActivityManager.hpp"
