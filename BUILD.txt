@@ -1,0 +1,5 @@
+Build (MinGW / Code::Blocks / VS):
+  g++ main.cpp ParcelCategoryBST.cpp -o Task5_ParcelCategory
+
+These Task 5 files are merged into the group's integrated prototype.
+The final group submission zip name must be:/n  <GroupNo>_<LeaderTP>_<Member1TP>_<Member2TP>.zip
