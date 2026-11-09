@@ -1,4 +1,4 @@
-#include "CollectionDelivery.h"
+#include "CollectionDelivery.hpp"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -67,8 +67,9 @@ bool readYesNo(const string& prompt) {
 // Constructor
 // ==================================================
 
+//Changes: logger starts as nullptr (no task 4 attached yet)
 CollectionDelivery::CollectionDelivery(ParcelIntake& sharedIntake)
-    : intake(sharedIntake), riderCount(0) {
+    : intake(sharedIntake), riderCount(0), logger(nullptr), service(nullptr) {      
 
     // Default campus delivery riders
     addRider("R1", "Aiman");
@@ -176,6 +177,15 @@ void CollectionDelivery::joinCollectionQueue() {
 
     counterQueue.enqueue(parcelID);
 
+    //Changes: task 4: record that the counter was assigned (recource "COUNTER"; the parcel status does not change here).
+    //The parcel's Task 2 service request (if any) is stored with it.
+    if(logger != nullptr){
+        logger->recordActivity(parcelID, ACT_ASSIGN_RESOURCE,
+                               parcel.status, parcel.status,
+                               parcel.nextAction, parcel.nextAction,
+                               findLinkedRequest(parcelID), "COUNTER");
+    }
+
     cout << "\nAdded to collection queue.\n";
     cout << "Parcel ID      : " << parcelID << "\n";
     cout << "Recipient      : " << parcel.recipientName << "\n";
@@ -222,11 +232,15 @@ void CollectionDelivery::serveNextCustomer() {
     }
 
     // Update the shared record through Module 1
-    if (intake.updateParcelStatus(parcelID, "Collected")) {
+    //Changes: Add  findLinkedRequest(parcelID), "COUNTER"
+    //Also telss task 4 which resource handled it(the COLLECT activity itself is recorded inside Task 1's updateParcelStatus)
+    //the linked task 2 request ID is stored with the COLLECT activity
+    if (intake.updateParcelStatus(parcelID, "Collected", findLinkedRequest(parcelID), "COUNTER")) {
         counterQueue.dequeue();
         cout << "\nParcel collected successfully!\n";
         cout << "Parcel ID : " << parcelID << "\n";
         cout << "Status    : Collected\n";
+        completeLinkedRequest(parcelID);        //Changes: the parcel's task 2 request is completed too
     } else {
         cout << "Error: Could not update parcel status.\n";
     }
@@ -313,6 +327,17 @@ void CollectionDelivery::assignDelivery() {
     riders[index].status = "On Delivery";
     riders[index].currentParcelID = parcelID;
 
+    //Changes: task 4: record the rider assignment
+    //resource = rider ID; the parcel status does not change here
+    //The parcel's task 2 service request is stored with it
+    if(logger != nullptr){
+        logger->recordActivity(parcelID, ACT_ASSIGN_RESOURCE,
+                               parcel.status, parcel.status,
+                               parcel.nextAction, parcel.nextAction,
+                               findLinkedRequest(parcelID), 
+                               riders[index].riderID);
+    }
+
     cout << "\nDelivery assigned successfully!\n";
     cout << "Parcel ID : " << parcelID << "\n";
     cout << "Rider     : " << riders[index].riderID
@@ -347,11 +372,13 @@ void CollectionDelivery::completeDelivery() {
 
     if (success) {
         // Update the shared record through Module 1
-        if (intake.updateParcelStatus(rider.currentParcelID,
-                                      "Delivered")) {
+        if (intake.updateParcelStatus(rider.currentParcelID,        //Below tells task 4 which rider delivered it
+                                      "Delivered", findLinkedRequest(rider.currentParcelID), rider.riderID)) {
+            
             rider.completedDeliveries++;
             cout << "Parcel " << rider.currentParcelID
                  << " marked as Delivered.\n";
+            completeLinkedRequest(rider.currentParcelID);   //Changes: the parcel's task 2 request is completed too
         } else {
             cout << "Error: Parcel status could not be updated "
                  << "(it may have been changed in another module).\n";
@@ -456,3 +483,75 @@ void CollectionDelivery::runMenu() {
         }
     }
 }
+
+//New changes below: Attach task 4 activity logger
+void CollectionDelivery::setLogger(ActivityLogger* activityLogger){
+    logger = activityLogger;
+}
+
+//Remove one parcel from the counter queue, keeping the order of the others.
+//Use only circular-queue operations (peek/dequeue/enqueue)
+bool CollectionDelivery::removeFromCounterQueue(const string& parcelID){
+    bool removed = false;
+    int originalSize = counterQueue.size();
+    string current;
+
+    for(int i = 0; i < originalSize; i++) {
+        counterQueue.peek(current);
+        counterQueue.dequeue();
+
+        if(!removed && current == parcelID){
+            removed = true;     //drop this counter
+        }else{
+            counterQueue.enqueue(current);      //everyone else rejoins in order
+        }
+    }
+    return removed;
+}
+
+//Attach task 2 (service requests)
+void CollectionDelivery::setServiceManager(ServiceManager* serviceManager){
+    service = serviceManager;
+}
+
+//task 2 request ID of this parcel's Active request ("-" if none / task 2 not attached)
+string CollectionDelivery::findLinkedRequest(const string& parcelID) const{
+    string requestID = "-";
+    if(service != nullptr){
+        service->findActiveRequestForParcel(parcelID, requestID);
+    }
+    return requestID;
+}
+
+//Mark the parcel's active task 2 request as Completed and tell the user
+void CollectionDelivery::completeLinkedRequest(const string& parcelID){
+    if(service == nullptr){
+        return;
+    }
+    string requestID = findLinkedRequest(parcelID);
+    if(service->completeRequestForParcel(parcelID)){
+        cout << "Linked service request " << requestID << " marked as Completed.\n";
+    }
+}
+
+//used by task 4 undo of an ASSIGN_RESOURCE activity
+bool CollectionDelivery::releaseAssignment(const string& parcelID, const string& resourceID){
+    //Counter assignment: take the customer out of the waiting line
+    if(resourceID == "COUNTER"){
+        return removeFromCounterQueue(parcelID);
+    }
+
+    //Rider assignment: the same rider must still be carrying this parcel
+    int index = findRiderByParcel(parcelID);
+
+    if(index == -1 || riders[index].riderID != resourceID || riderRotation.isFull()){
+        return false;
+    }
+
+    //Free the rider and put them back in the rotation (at the rear)
+    riders[index].status = "Available";
+    riders[index].currentParcelID = "-";
+    riderRotation.enqueue(index);
+    return true;
+}
+

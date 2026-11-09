@@ -3,6 +3,8 @@
 
 #include "ParcelIntake.hpp"
 #include "CircularQueue.hpp"
+#include "ServiceManager.hpp"
+#include "../models/ActivityLogger.hpp"
 #include <string>
 
 // ==================================================
@@ -45,12 +47,24 @@ private:
     Rider riders[MAX_RIDERS];
     int riderCount;
 
+    //Changes: Task 4 hook: assignments are reported to this logger
+    //May be nullptr when Task 3 runs on its own
+    ActivityLogger* logger;
+    ServiceManager* service;        //Task 2 link, may be nullptr when task 3 runs on its own
+
     // Helpers
     bool isInCounterQueue(const std::string& parcelID) const;
     int findRiderByParcel(const std::string& parcelID) const;
     int findRiderByID(const std::string& riderID) const;
     void addRider(const std::string& riderID,
                   const std::string& name);
+
+    //Changes: New helper for undo: remove one customer from the counter queue while keeping everybody else in order
+    bool removeFromCounterQueue(const std::string& parcelID);
+
+    //Changes: New helpers for task 2 link
+    std::string findLinkedRequest(const std::string& parcelID) const;   //"-" if none
+    void completeLinkedRequest(const std::string& parcelID);
 
 public:
     explicit CollectionDelivery(ParcelIntake& sharedIntake);
@@ -71,6 +85,17 @@ public:
 
     // Module menu (called from main.cpp)
     void runMenu();
+
+    //Changes:Attach task 4 activity logger
+    void setLogger(ActivityLogger* activityLogger);
+
+    //Changes: attach task 2 so counter / rider work is linked to the parcel service request
+    void setServiceManager(ServiceManager* serviceManager);
+
+    //Changes: task 4 undo support: cancel an earlier assignment
+    //resourceID == "COUNTER" -> remove the parcel from the counter queue
+    //otherwise -> free that rider and put them back in the rotation
+    bool releaseAssignment(const std::string& parcelID, const std::string& resourceID);
 };
 
 #endif // COLLECTION_DELIVERY_HPP

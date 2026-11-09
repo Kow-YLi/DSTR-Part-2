@@ -2,14 +2,9 @@
 #define ACTIVITY_MANAGER_HPP
 #include <string>
 #include "../models/ActivityLogger.hpp"
-<<<<<<< HEAD
 #include "ParcelIntake.hpp"
 #include "ServiceManager.hpp"
 #include "CollectionDelivery.hpp"
-=======
-#include "ParcelIntake.h"
-
->>>>>>> task3_collection-delivery
 
 // One entry in the activity history
 // ActivityRecord structure to hold details of each activity history entry. (stored inside the stack)

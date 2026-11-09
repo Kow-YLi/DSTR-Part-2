@@ -2,10 +2,10 @@
 #include <string>
 #include <cctype>
  
-#include "ParcelIntake.hpp"
+#include "modules/ParcelIntake.hpp"
 #include "modules/ServiceManager.hpp"
 #include "modules/CollectionDelivery.hpp"
-#include "modules/ActivityManager.hpp"
+#include "ActivityManager.hpp"
  
 using namespace std;
  

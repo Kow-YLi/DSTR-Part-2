@@ -1,5 +1,7 @@
 
-#include "ParcelIntake.h"
+#include "ParcelIntake.hpp"
+#include "../models/Csvutils.hpp"
+#include <fstream>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -183,14 +185,42 @@ bool canChangeStatus(
     return false;
 }
 
+// New helper: choose the activitytype that is recorded for a status change made through updateParcelStatus()
+ActivityType activityForStatus(const string& status){
+    if(status == "Collected") return ACT_COLLECT;
+    if(status == "Delivered") return ACT_DELIVER;
+    if(status == "Returned") return ACT_RETURN;
+    if(status == "Cancelled") return ACT_CANCEL;
+    if(status == "Missing") return ACT_MARK_MISSING;
+    if(status == "On Hold") return ACT_HOLD;
+    if(status == "Pending Sorting") return ACT_RESORT;
+    return ACT_SORT; //Ready for Collection /Awsiting Delivery / Special Handling / Return to Sender
+}
+
+// New helper: validates the status text read from the CSV
+bool isKnownStatus(const string& status){
+    return status == "Pending Sorting" ||
+           status == "Ready for Collection" ||
+           status == "Awaiting Delivery Assignment" ||
+           status == "Special Handling" ||
+           status == "Return to Sender" ||
+           status == "On Hold" ||
+           status == "Missing" ||
+           status == "Collected" ||
+           status == "Delivered" ||
+           status == "Returned" ||
+           status == "Cancelled";
+}
+
 } // namespace
 
 // ==================================================
 // Constructor and Destructor
 // ==================================================
 
+//Changes: Add logger starts as nullptr (no Task 4 attached yet)
 ParcelIntake::ParcelIntake()
-    : head(nullptr), front(nullptr), rear(nullptr) {
+    : head(nullptr), front(nullptr), rear(nullptr), logger(nullptr){
 }
 
 ParcelIntake::~ParcelIntake() {
@@ -383,6 +413,9 @@ void ParcelIntake::registerParcel() {
     // Add ID to the incoming processing queue
     enqueue(parcel.parcelID);
 
+    //Task 4: Record the REGISTRY activity in the shared history
+    logChange(parcel.parcelID, ACT_REGISTER, "-", parcel.status, "-", parcel.nextAction, "-", "-");
+
     cout << "\nParcel registered successfully!\n";
     cout << "Parcel ID: " << parcel.parcelID << "\n";
     cout << "Status: " << parcel.status << "\n";
@@ -499,6 +532,11 @@ void ParcelIntake::processNextParcel() {
 
     Parcel& parcel = found->data;
 
+    //Changes: Remember the values before sorting (needed for undo)
+    string previousStatus = parcel.status;
+    string previousNextAction = parcel.nextAction;
+
+
     // Prevent processing a parcel in an invalid state
     if (parcel.status != "Pending Sorting") {
         cout << "Error: Parcel is not pending sorting.\n";
@@ -548,6 +586,10 @@ void ParcelIntake::processNextParcel() {
     // Remove processed parcel from the intake queue
     dequeue();
 
+    //Changes: Task 4: record the Sort or Hold activity
+    logChange(parcel.parcelID, choice == 5 ? ACT_HOLD : ACT_SORT, 
+              previousStatus, parcel.status, previousNextAction, parcel.nextAction, "-", "-");
+
     cout << "\nParcel processed successfully!\n";
     cout << "Parcel ID   : " << parcel.parcelID << "\n";
     cout << "New Status  : " << parcel.status << "\n";
@@ -561,7 +603,9 @@ void ParcelIntake::processNextParcel() {
 
 bool ParcelIntake::updateParcelStatus(
     const string& parcelID,
-    const string& newStatus
+    const string& newStatus,
+    const string& requestID,     //Add two extra parameters
+    const string& resourceID
 ) {
     ParcelNode* found = findParcelNode(parcelID);
 
@@ -576,6 +620,10 @@ bool ParcelIntake::updateParcelStatus(
     if (!canChangeStatus(parcel.status, newStatus)) {
         return false;
     }
+
+    //Remember the values before the change(needed for undo)
+    string previousStatus = parcel.status;
+    string previousNextAction = parcel.nextAction;
 
     // Manage incoming queue
     if (newStatus == "Pending Sorting") {
@@ -615,6 +663,13 @@ bool ParcelIntake::updateParcelStatus(
     else if (newStatus == "Cancelled") {
         parcel.nextAction = "None";
     }
+
+    //Task 4: record the status change in the shared history
+    // Covers the changes made by Task 1 menu, Task 2 requests and Task 3 counter or riders
+    logChange(parcelID, activityForStatus(newStatus), 
+              previousStatus, newStatus, 
+              previousNextAction, parcel.nextAction, 
+              requestID, resourceID);
 
     return true;
 }
@@ -795,4 +850,142 @@ void ParcelIntake::reportMissingParcel() {
     } else {
         cout << "Error: Cannot update parcel status.\n";
     }
+}
+
+// All new changes below: Attach the Task 4 activity logger
+void ParcelIntake::setLogger(ActivityLogger* activityLogger){
+    logger = activityLogger;
+
+}
+
+//Send one change to the activity logger (doesnothing if none is attached)
+void ParcelIntake::logChange(const string& parcelID, ActivityType type, 
+                             const string& previousStatus, const string& newStatus,
+                             const string& previousNextAction, const string& newNextAction, 
+                             const string& requestID, const string& resourceID
+)const{
+    if(logger != nullptr){
+        logger->recordActivity(parcelID, type, previousStatus, newStatus, previousNextAction, newNextAction, requestID, resourceID);
+    }
+}
+
+//Used by Task 4 undo. Goes backwards (which canChangeStatus() would refuse),
+//but only when the parcel is still in the status the activity produced, also keeps the incoming FIFO queue consistent.
+bool ParcelIntake::restoreParcelStatus(const string& parcelID, const string& expectedCurrentStatus, const string& previousStatus, const string& previousNextAction){
+    ParcelNode* found = findParcelNode(parcelID);
+
+    //Parcel must exist and still be in the status being undone
+    if(found == nullptr || found->data.status != expectedCurrentStatus){
+        return false;
+    }
+
+    //Same queue rule as updateParcelStatus(): "Pending Sorting" parcels wait in the incoming queue,
+    //every other status is outside the queue
+    if(previousStatus == "Pending Sorting"){
+        enqueue(parcelID);
+    }else{
+        removeFromQueue(parcelID);
+    }
+
+    found->data.status = previousStatus;
+    found->data.nextAction = previousNextAction;
+    return true;
+}
+
+//Load sample parcels from CSV. Parcels in "Pending Sorting" are placed in the incoming queue in file order.
+//Invalid lines are skipped with a warning.
+int ParcelIntake::loadFromCSV(const string& filePath){
+    ifstream file(filePath.c_str());
+    if(!file.is_open()){
+        return -1;
+    }
+
+    string line, f[8];
+    int loaded = 0, lineNo = 0;
+    getline(file, line);
+
+    while(getline(file, line)){
+        ++lineNo;
+        if(line.empty() || line == "\r") continue;
+
+        // 8 colums, unique ID, valid date or time (reuses task 1 validator)
+
+        bool valid = (splitCsvLine(line, f, 8) == 8) &&
+        !f[0].empty() &&
+        findParcelNode(f[0]) == nullptr &&
+        isValidDateTime(f[5]) &&
+        isKnownStatus(f[6]);
+
+        if(!valid){
+            cout <<"[Warning] " << filePath << " data line " << lineNo << " skipped (invalid.\n)";
+            continue;
+        }
+
+        Parcel parcel;
+        parcel.parcelID        = f[0];
+        parcel.recipientName   = f[1];
+        parcel.recipientID     = f[2];
+        parcel.deliveryCompany = f[3];
+        parcel.parcelType      = f[4];
+        parcel.arrivalDateTime = f[5];
+        parcel.status          = f[6];
+        parcel.nextAction      = f[7];
+
+        insertParcel(parcel);       //Task 1 linked-list insert
+
+        if(parcel.status == "Pending Sorting"){
+            enqueue(parcel.parcelID);       //Task 1 oen FIFO queue
+        }
+        ++loaded;
+    }
+    return loaded;
+}
+
+//Number of parcel records currently stored
+int ParcelIntake::getParcelCount()const{
+    int count = 0;
+    for(ParcelNode* current = head; current != nullptr; current = current->next){
+        count++;
+
+    }
+    return count;
+}
+
+//Copy of the parcel at a position in the list(false if the index is invalid)
+bool ParcelIntake::getParcelAt(int index, Parcel& result) const{
+    if(index < 0){
+        return false;
+    }
+
+    ParcelNode* current = head;
+    while(current != nullptr && index > 0){
+        current = current->next;
+        index--;
+    }
+    if(current == nullptr){
+        return false;
+    }
+    result = current->data;
+    return true;
+}
+
+//Save all parcels back to CSV
+bool ParcelIntake::saveToCSV(const string& filePath)const{
+    ofstream file(filePath.c_str());
+    if(!file.is_open()){
+        cout << "[Error] Unable to open file for writing: " << filePath << endl;
+        return false;
+    }
+
+    file << "parcelID,recipientName,recipientID,deliveryCompany,"
+            "parcelType,arrivalDateTime,status,nextAction\n";
+    
+    for (ParcelNode* current = head; current != nullptr; current = current->next){
+        const Parcel& p = current->data;
+        file << p.parcelID << "," << p.recipientName << ","
+             << p.recipientID << "," << p.deliveryCompany << ","
+             << p.parcelType << "," << p.arrivalDateTime << ","
+             << p.status << "," << p.nextAction << "\n";
+    }
+    return true;
 }
