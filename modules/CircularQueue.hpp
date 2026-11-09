@@ -1,5 +1,5 @@
-#ifndef CIRCULAR_QUEUE_H
-#define CIRCULAR_QUEUE_H
+#ifndef CIRCULAR_QUEUE_HPP
+#define CIRCULAR_QUEUE_HPP
 
 // ==================================================
 // Circular Queue (fixed-size array, FIFO)
@@ -85,4 +85,4 @@ public:
     }
 };
 
-#endif // CIRCULAR_QUEUE_H
+#endif // CIRCULAR_QUEUE_HPP
