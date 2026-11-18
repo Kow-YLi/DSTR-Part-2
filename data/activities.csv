@@ -1,8 +1,34 @@
 activityId,timestamp,parcelId,activityType,previousStatus,newStatus,previousNextAction,newNextAction,requestId,resourceId,staffId,reversed
 1,2026-11-02 09:15:00,PX0001,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S01,0
-2,2026-11-02 10:02:00,PX0002,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S01,0
-3,2026-11-03 11:30:00,PX0003,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S02,0
-4,2026-11-04 08:50:00,PX0005,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S02,0
-5,2026-11-04 14:20:00,PX0006,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S01,0
-6,2026-11-04 14:25:00,PX0006,SORT,Pending Sorting,Ready for Collection,Not Assigned,Collection,-,-,S01,1
-7,2026-11-09 21:54:59,PX0006,UNDO,Ready for Collection,Pending Sorting,Collection,Not Assigned,-,-,S01,0
+2,2026-11-02 09:40:00,PX0001,SORT,Pending Sorting,Awaiting Delivery Assignment,Not Assigned,Campus Delivery,-,-,S01,0
+3,2026-11-02 09:55:00,PX0001,CREATE_REQUEST,Awaiting Delivery Assignment,Awaiting Delivery Assignment,Campus Delivery,Campus Delivery,R001,-,S01,0
+4,2026-11-02 10:02:00,PX0002,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S01,0
+5,2026-11-02 10:25:00,PX0002,SORT,Pending Sorting,Ready for Collection,Not Assigned,Collection,-,-,S02,0
+6,2026-11-02 10:30:00,PX0001,ASSIGN_RESOURCE,Awaiting Delivery Assignment,Awaiting Delivery Assignment,Campus Delivery,Campus Delivery,R001,R1,S02,0
+7,2026-11-02 11:20:00,PX0001,DELIVER,Awaiting Delivery Assignment,Delivered,Campus Delivery,Completed,R001,R1,S02,0
+8,2026-11-02 11:21:00,PX0001,PROCESS_REQUEST,Delivered,Delivered,Completed,Completed,R001,-,S02,0
+9,2026-11-03 11:30:00,PX0003,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S02,0
+10,2026-11-03 11:50:00,PX0003,SORT,Pending Sorting,Ready for Collection,Not Assigned,Collection,-,-,S02,0
+11,2026-11-03 12:05:00,PX0003,CREATE_REQUEST,Ready for Collection,Ready for Collection,Collection,Collection,R002,-,S02,0
+12,2026-11-03 13:45:00,PX0004,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S01,0
+13,2026-11-03 14:00:00,PX0003,ASSIGN_RESOURCE,Ready for Collection,Ready for Collection,Collection,Collection,R002,COUNTER,S03,0
+14,2026-11-03 14:10:00,PX0003,COLLECT,Ready for Collection,Collected,Collection,Completed,R002,COUNTER,S03,0
+15,2026-11-03 14:11:00,PX0003,PROCESS_REQUEST,Collected,Collected,Completed,Completed,R002,-,S03,0
+16,2026-11-03 14:20:00,PX0004,SORT,Pending Sorting,Ready for Collection,Not Assigned,Collection,-,-,S02,1
+17,2026-11-03 14:25:00,PX0004,UNDO,Ready for Collection,Pending Sorting,Collection,Not Assigned,-,-,S02,0
+18,2026-11-04 08:50:00,PX0005,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S02,0
+19,2026-11-04 09:10:00,PX0005,HOLD,Pending Sorting,On Hold,Not Assigned,Investigation,-,-,S02,0
+20,2026-11-04 14:20:00,PX0006,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S01,0
+21,2026-11-04 14:40:00,PX0006,HOLD,Pending Sorting,On Hold,Not Assigned,Investigation,-,-,S01,0
+22,2026-11-04 15:05:00,PX0006,RESORT,On Hold,Pending Sorting,Investigation,Not Assigned,-,-,S02,0
+23,2026-11-05 09:40:00,PX0007,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S01,0
+24,2026-11-05 10:00:00,PX0007,SORT,Pending Sorting,Awaiting Delivery Assignment,Not Assigned,Campus Delivery,-,-,S02,0
+25,2026-11-05 15:10:00,PX0008,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S02,0
+26,2026-11-05 16:00:00,PX0008,MARK_MISSING,Pending Sorting,Missing,Not Assigned,Investigation,-,-,S02,0
+27,2026-11-06 10:05:00,PX0009,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S01,0
+28,2026-11-06 10:30:00,PX0009,SORT,Pending Sorting,Return to Sender,Not Assigned,Return,-,-,S01,0
+29,2026-11-06 10:45:00,PX0009,CREATE_REQUEST,Return to Sender,Return to Sender,Return,Return,R003,-,S01,0
+30,2026-11-06 11:15:00,PX0009,RETURN,Return to Sender,Returned,Return,Completed,R003,-,S01,0
+31,2026-11-06 11:16:00,PX0009,PROCESS_REQUEST,Returned,Returned,Completed,Completed,R003,-,S01,0
+32,2026-11-06 16:35:00,PX0010,REGISTER,-,Pending Sorting,-,Not Assigned,-,-,S02,0
+33,2026-11-06 17:00:00,PX0010,CANCEL,Pending Sorting,Cancelled,Not Assigned,None,-,-,S01,0
